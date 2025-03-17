@@ -15,9 +15,9 @@ namespace internel {
 
 std::stringstream error_msg;
 
-void do_exit_or_throw(std::stringstream &error_msg)
+void exit_or_throw(std::stringstream &error_msg)
 {
-    if (EXIT_WHEN_ERROR) {
+    if (config_exit_when_error) {
         if (error_msg.str().length()) {
             std::cerr << error_msg.str() << std::endl;
         }
@@ -46,25 +46,25 @@ std::shared_ptr<Arg> Arg::long_name(const char *name)
 {
     if (arg_type_ == ArgType::POSITION) {
         internel::error_msg << "Position argument can not set long name.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (strncmp(name, "help", 4) == 0) {
         internel::error_msg << "The option of --help and -h have been automatically added. Just run: xx.bin "
                                "--help or xx.bin -h "
                                "to show the usage help.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (strlen(name) < 2) {
         internel::error_msg << "The length of long option must be greater than 2.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (strncmp(name, "-", 1) == 0) {
         internel::error_msg << "The name cannot start with -- or - .";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (std::any_of(name, name + strlen(name), [](const char elem) { return elem == ' '; })) {
         internel::error_msg << "The long option can not contain spaces.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     long_name_ = name;
     return shared_from_this();
@@ -74,17 +74,17 @@ std::shared_ptr<Arg> Arg::short_name(char name)
 {
     if (arg_type_ == ArgType::POSITION) {
         internel::error_msg << "Position argument can not set short name.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (name == 'h') {
         internel::error_msg << "The option of --help and -h have been automatically added. Just run: xx.bin "
                                "--help or xx.bin -h "
                                "to show the usage help.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (name == ' ') {
         internel::error_msg << "The short option can not be a space.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     short_name_ = name;
 
@@ -95,7 +95,7 @@ std::shared_ptr<Arg> Arg::conflicts_with_all()
 {
     if (arg_type_ == ArgType::REQUIRED || arg_type_ == ArgType::POSITION) {
         internel::error_msg << "The required argument or position argument can not set related options.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     is_conflict_with_all_ = true;
     return shared_from_this();
@@ -105,7 +105,7 @@ std::shared_ptr<Arg> Arg::default_value(const char *value)
 {
     if (arg_type_ != ArgType::OPTIONAL) {
         internel::error_msg << "Only optional argument can set default value.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     values_.push_back(value);
     default_values_.push_back(std::move(value));
@@ -119,11 +119,11 @@ std::shared_ptr<Arg> Arg::default_values(std::vector<const char *> &&values)
 {
     if (arg_type_ != ArgType::OPTIONAL) {
         internel::error_msg << "Only optional argument can set default values.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (values.empty()) {
         internel::error_msg << "The default values can not empty.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     values_ = values;
     default_values_ = std::move(values);
@@ -138,12 +138,12 @@ std::shared_ptr<Arg> Arg::range(NumType type, const char *left, const char *righ
 {
     if (arg_type_ == ArgType::FLAG) {
         internel::error_msg << "The flag option can not set value range.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (is_choice_) {
         internel::error_msg << "The selection value has been set for the option, and the range value can not be "
                                "set again.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     left_ = left;
     right_ = right;
@@ -158,21 +158,21 @@ std::shared_ptr<Arg> Arg::choices(std::vector<const char *> &&choices)
 {
     if (arg_type_ == ArgType::FLAG) {
         internel::error_msg << "The flag option can not set value choices.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (is_range_) {
         internel::error_msg << "The range value has been set for the option, and the selection value can not be "
                                "set again.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     if (choices.empty()) {
         internel::error_msg << "The value choices vector can not empty.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     choices_ = std::set<const char *, internel::CStrCmp>(choices.begin(), choices.end());
     if (choices_.empty()) {
         internel::error_msg << "The value choices set can not empty.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     is_choice_ = true;
     return shared_from_this();
@@ -286,7 +286,7 @@ void Arg::check_range()
             check_ret = check_range(value, left, right);
         } else {
             internel::error_msg << "Unknown range type.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
 
         if (!check_ret) {
@@ -302,7 +302,7 @@ void Arg::check_range()
             } else {
                 internel::error_msg << "A argument must have at least a long name or a short name or a position id.";
             }
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
     }
 }
@@ -314,11 +314,11 @@ void Arg::check_choice()
             if (get_position_id() != -1) {
                 internel::error_msg << "The value of position argument (position index " << get_position_id()
                                     << ") is not within " << get_choice_description() << ".";
-                internel::do_exit_or_throw(internel::error_msg);
+                internel::exit_or_throw(internel::error_msg);
             } else {
                 internel::error_msg << "The value of option --" << get_long() << " is not within "
                                     << get_choice_description() << ".";
-                internel::do_exit_or_throw(internel::error_msg);
+                internel::exit_or_throw(internel::error_msg);
             }
         }
     }
@@ -348,7 +348,7 @@ std::shared_ptr<Command> Command::arg(std::shared_ptr<Arg> arg)
 {
     if (arg->get_arg_type() != ArgType::POSITION && arg->get_long() == nullptr && arg->get_short() == ' ') {
         internel::error_msg << "The argument should have a long name or a short name.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
 
     int argid = current_argid_--;
@@ -521,7 +521,7 @@ void Command::do_parse_args(int argc, char **argv)
         // 这涉及到出错时信息显示顺序的问题。采用这种方式，会先显示父命令的错误信息，然后再显示子命令的错误信息。
         if (idx == argc) {
             internel::error_msg << command_name_ << ": Missing subcommand.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
 
         current_subcommand_name_ = argv[idx];
@@ -548,7 +548,8 @@ void Command::do_parse_args_internel(int argc, char **argv)
             arg = argid_2_arg_.at(ret);  // 正常情况下，这里不应该抛出异常
         } else {  //  返回正数表示解析遇到了短参数，参看 `current_argid_` 和 `update_c_short_args` 函数
             if (ret == '?' || ret == ':') {
-                internel::do_exit_or_throw(internel::error_msg);
+                internel::error_msg << command_name_ << ": Function `getopt_long_only` returned an error.";
+                internel::exit_or_throw(internel::error_msg);
             }
             if (ret == 'h') {
                 print_usage_help();
@@ -570,7 +571,7 @@ void Command::do_parse_args_internel(int argc, char **argv)
     argv += optind;
     if (static_cast<size_t>(argc) < position_args_.size()) {
         internel::error_msg << command_name_ << ": Missing required position arguments.";
-        internel::do_exit_or_throw(internel::error_msg);
+        internel::exit_or_throw(internel::error_msg);
     }
     for (size_t i = 0; i < static_cast<size_t>(argc); i++) {
         position_values_.emplace_back(argv[i]);
@@ -588,7 +589,7 @@ void Command::check_required_args()
         const std::shared_ptr<Arg> &arg = iter.second;
         if (arg->get_arg_type() == ArgType::REQUIRED && !arg->is_hit()) {
             internel::error_msg << command_name_ << ": Missing required option: --" << arg->get_long() << ".";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
     }
 
@@ -596,7 +597,7 @@ void Command::check_required_args()
         const std::shared_ptr<Arg> &arg = iter.second;
         if (arg->get_arg_type() == ArgType::REQUIRED && !arg->is_hit()) {
             internel::error_msg << command_name_ << ": Missing required option: -" << arg->get_short() << ".";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
     }
 }
@@ -615,7 +616,7 @@ void Command::check_conflict_with_all_args()
                         internel::error_msg << command_name_
                                             << ": The conflict relationship is not satisfied. Option --"
                                             << arg->get_long() << " is conflict with all other options.";
-                        internel::do_exit_or_throw(internel::error_msg);
+                        internel::exit_or_throw(internel::error_msg);
                     }
                 }
             }
@@ -628,7 +629,7 @@ void Command::check_conflict_with_all_args()
                     if (arg2->is_hit()) {
                         internel::error_msg << command_name_ << ": The conflict relationship is not satisfied. Option -"
                                             << arg->get_short() << " is conflict with all other options.";
-                        internel::do_exit_or_throw(internel::error_msg);
+                        internel::exit_or_throw(internel::error_msg);
                     }
                 }
             }
@@ -648,13 +649,13 @@ void Command::check_related_groups()
             if (strlen(name) == 1) {
                 if (shortname_2_arg_.count(name[0]) == 0) {
                     internel::error_msg << command_name_ << ": Can not find -" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return shortname_2_arg_.at(name[0])->is_hit();
             } else {
                 if (longname_2_arg_.count(name) == 0) {
                     internel::error_msg << command_name_ << ": Can not find --" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return longname_2_arg_.at(name)->is_hit();
             }
@@ -662,7 +663,7 @@ void Command::check_related_groups()
         if (count != 0 && count != group.size()) {
             internel::error_msg << command_name_ << ": The related relationship is not satisfied. "
                                 << get_description(related_groups_.at(idx)) << ": is related with each other.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         idx++;
     }
@@ -677,13 +678,13 @@ void Command::check_conflict_groups()
             if (strlen(name) == 1) {
                 if (shortname_2_arg_.count(name[0]) == 0) {
                     internel::error_msg << command_name_ << ": Can not find -" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return shortname_2_arg_.at(name[0])->is_hit();
             } else {
                 if (longname_2_arg_.count(name) == 0) {
                     internel::error_msg << command_name_ << ": Can not find --" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return longname_2_arg_.at(name)->is_hit();
             }
@@ -691,7 +692,7 @@ void Command::check_conflict_groups()
         if (count > 1) {
             internel::error_msg << command_name_ << ": The conflict relationship is not satisfied. "
                                 << get_description(conflict_groups_.at(idx)) << ": is conflict with each other.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         idx++;
     }
@@ -707,13 +708,13 @@ void Command::check_one_required_group()
             if (strlen(name) == 1) {
                 if (shortname_2_arg_.count(name[0]) == 0) {
                     internel::error_msg << command_name_ << ": Can not find -" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return shortname_2_arg_.at(name[0])->is_hit();
             } else {
                 if (longname_2_arg_.count(name) == 0) {
                     internel::error_msg << command_name_ << ": Can not find --" << name << " option.";
-                    internel::do_exit_or_throw(internel::error_msg);
+                    internel::exit_or_throw(internel::error_msg);
                 }
                 return longname_2_arg_.at(name)->is_hit();
             }
@@ -722,7 +723,7 @@ void Command::check_one_required_group()
             internel::error_msg << command_name_ << ": The one of require relationship is not satisfied. "
                                 << get_description(one_required_groups_.at(idx))
                                 << ": at least one option should exist.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         idx++;
     }
@@ -772,7 +773,7 @@ void Command::print_usage_help()
             std::cout << usage_format2_[i] << std::endl;
         }
     }
-    internel::do_exit_or_throw(internel::error_msg);
+    internel::exit_or_throw(internel::error_msg);
 }
 
 }  // namespace zul

@@ -3,8 +3,8 @@
 // 结合了 GitHub 上各种参数解析框架的优缺点，自己实现的一套参数解析框架。
 //
 // 唯一配置项（根据实际需求进行配置）
-// - 如果 `EXIT_WHEN_ERROR == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
-// - 如果 `EXIT_WHEN_ERROR == false`，则解析到非法参数时抛出异常。
+// - 如果 `config_exit_when_error == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
+// - 如果 `config_exit_when_error == false`，则解析到非法参数时抛出异常。
 //   在交互模式下进行参数解析，可用这种方式，这样就不用退出当前程序，只用捕获异常并处理即可，然后就可以进入下一轮参数解析。
 //   本项目的单元测试程序 `test_argparse.cpp`就是用的这种方式。因为单元测试程序本来就要测试异常场景，
 //   而如果遇到错误直接退出程序，那么单元测试就无法继续。
@@ -13,7 +13,7 @@
 // - Ubuntu 22.04 LTS
 // - C++17，gcc 11.4.0，clang 14.0.0
 //
-// 版本信息：v6.0.0
+// 版本信息：v6.0.1
 
 #ifndef ARGPARSE_HEADER_
 #define ARGPARSE_HEADER_
@@ -51,15 +51,15 @@ namespace zul {  // zul = Zhang Dongyu's utils library.
 namespace internel {
 
 // 唯一配置项（根据实际需求进行配置）
-// - 如果 `EXIT_WHEN_ERROR == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
-// - 如果 `EXIT_WHEN_ERROR == false`，则解析到非法参数时抛出异常。
+// - 如果 `config_exit_when_error == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
+// - 如果 `config_exit_when_error == false`，则解析到非法参数时抛出异常。
 //   在交互模式下进行参数解析，可用这种方式，这样就不用退出当前程序，只用捕获异常并处理即可，然后就可以进入下一轮参数解析。
 //   本项目的单元测试程序 `test_argparse.cpp`就是用的这种方式。因为单元测试程序本来就要测试异常场景，
 //   而如果遇到错误直接退出程序，那么单元测试就无法继续。
-constexpr bool EXIT_WHEN_ERROR = false;
+constexpr bool config_exit_when_error = false;
 
-// 解析失败时根据 `EXIT_WHEN_ERROR` 的值打印错误信息或抛出类型为 `ParseArgsError` 的异常
-void do_exit_or_throw(std::stringstream &error_msg);
+// 解析失败时根据 `config_exit_when_error` 的值打印错误信息或抛出类型为 `ParseArgsError` 的异常
+void exit_or_throw(std::stringstream &error_msg);
 
 // 记录参数解析过程中遇到的错误信息，解析失败时会打印
 extern std::stringstream error_msg;
@@ -109,7 +109,7 @@ T to_value(const char *str)
 class Arg;
 class Command;
 
-// 当 `EXIT_WHEN_ERROR == false` 时，参数解析错误时会抛出这个类型的异常
+// 当 `config_exit_when_error == false` 时，参数解析错误时会抛出这个类型的异常
 class ParseArgsError : public std::exception {
    public:
     explicit ParseArgsError(const std::string &error_msg) : error_msg_(error_msg) {}
@@ -401,12 +401,12 @@ class Command : public std::enable_shared_from_this<Command> {
     {
         if (longname_2_arg_.count(long_name) == 0) {
             internel::error_msg << "Can not find --" << long_name << " option.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         const std::shared_ptr<Arg> &arg = longname_2_arg_.at(long_name);
         if (arg->get_values().empty()) {
             internel::error_msg << "Option --" << long_name << " does not have a value.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         return internel::to_value<T>(arg->get_values().at(0));
     }
@@ -417,12 +417,12 @@ class Command : public std::enable_shared_from_this<Command> {
     {
         if (shortname_2_arg_.count(short_name) == 0) {
             internel::error_msg << "Can not find -" << short_name << " option.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         const std::shared_ptr<Arg> &arg = shortname_2_arg_.at(short_name);
         if (arg->get_values().empty()) {
             internel::error_msg << "Option -" << short_name << " does not have a value.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         return internel::to_value<T>(arg->get_values().at(0));
     }
@@ -439,7 +439,7 @@ class Command : public std::enable_shared_from_this<Command> {
     {
         if (longname_2_arg_.count(long_name) == 0) {
             internel::error_msg << "Can not find --" << long_name << " option.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         const std::shared_ptr<Arg> &arg = longname_2_arg_.at(long_name);
         std::vector<T> values;
@@ -456,7 +456,7 @@ class Command : public std::enable_shared_from_this<Command> {
     {
         if (shortname_2_arg_.count(short_name) == 0) {
             internel::error_msg << "Can not find -" << short_name << " option.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         const std::shared_ptr<Arg> &arg = shortname_2_arg_.at(short_name);
         std::vector<T> values;
@@ -473,7 +473,7 @@ class Command : public std::enable_shared_from_this<Command> {
     {
         if (position >= position_values_.size()) {
             internel::error_msg << "No corresponding position argument.";
-            internel::do_exit_or_throw(internel::error_msg);
+            internel::exit_or_throw(internel::error_msg);
         }
         return internel::to_value<T>(position_values_.at(position));
     }

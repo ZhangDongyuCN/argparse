@@ -45,12 +45,12 @@
 
 ```cpp
 // 唯一配置项（根据实际需求进行配置）
-// - 如果 `EXIT_WHEN_ERROR == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
-// - 如果 `EXIT_WHEN_ERROR == false`，则解析到非法参数时抛出异常。
+// - 如果 `config_exit_when_error == true`，则解析到非法参数时直接退出程序，一般应该用这种模式。
+// - 如果 `config_exit_when_error == false`，则解析到非法参数时抛出异常。
 //   在交互模式下进行参数解析，可用这种方式，这样就不用退出当前程序，只用捕获异常并处理即可，然后就可以进入下一轮参数解析。
 //   本项目的单元测试程序 `test_argparse.cpp`就是用的这种方式。因为单元测试程序本来就要测试异常场景，
 //   而如果遇到错误直接退出程序，那么单元测试就无法继续。
-constexpr bool EXIT_WHEN_ERROR = false;
+constexpr bool config_exit_when_error = false;
 ```
 
 ## 5.2. 快速构建
